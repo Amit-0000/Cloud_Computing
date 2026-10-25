@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MarkSheet Processor</title>
+<style>
+:root{--accent:#b45309;--ink:#172b4d;--muted:#62748a;--line:#dce5f0;--bg:#f4f7fb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Segoe UI,Arial,sans-serif;color:var(--ink)}header{background:#102a43;color:white;padding:17px max(18px,calc((100% - 1050px)/2));display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}header strong{font-size:21px}header small{color:#d5e4f5}
+main{max-width:1050px;margin:25px auto;padding:0 17px}.hero{background:linear-gradient(120deg,#12345a,var(--accent));color:white;padding:25px 28px;border-radius:17px;margin-bottom:18px}h1{margin:0 0 7px;font-size:clamp(25px,4vw,34px)}.hero p{margin:0;line-height:1.5;color:#e5edff}.card{background:white;border:1px solid var(--line);border-radius:15px;padding:21px;margin-bottom:17px;box-shadow:0 7px 24px #102a4308}h2{font-size:20px;margin:0 0 15px}h3{font-size:17px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:7px;min-width:0}label{font-size:13px;font-weight:700;color:#52657d}input,select,textarea{width:100%;padding:11px;border:1px solid #ccd8e6;border-radius:9px;font:inherit;background:#fff;color:var(--ink);min-height:42px}textarea{resize:vertical}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button{cursor:pointer;border-radius:9px;padding:11px 16px;font-weight:750;font-size:14px}.primary{border:0;background:var(--accent);color:#fff}.secondary{background:#edf4ff;color:var(--accent);border:1px solid #c9ddfb}.muted{font-size:13px;color:var(--muted);line-height:1.5}.notice{display:none;margin-top:14px;padding:12px;background:#fff0d9;color:#825300;border-radius:9px}.result{display:none}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}.stats>div{background:#f5f8fc;border-radius:10px;padding:13px}.stats small{display:block;color:var(--muted)}.stats b{display:block;font-size:19px;margin-top:5px}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}td,th{padding:10px;text-align:left;border-bottom:1px solid var(--line)}th{color:#52657d;background:#f8fafc}footer{text-align:center;padding:18px;color:var(--muted);font-size:12px}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.grid,.stats{grid-template-columns:1fr}main{padding:0 11px}.card{padding:15px}header{padding:15px}}
+@media print{header,.hero,.actions,footer{display:none}body{background:white}.card{box-shadow:none}}
+</style></head><body><header><strong>☁ MarkSheet Processor</strong><small>Cloud SaaS Demonstration</small></header><main>
+<section class="hero"><h1>MarkSheet Processor</h1><p>Enter subject marks and calculate total, average, percentage, rank placeholder, and overall performance.</p></section>
+<section class="card"><h2>Enter details</h2><form id="appForm"><div class="grid"><div class="field"><label for="f0">Student name</label><input id="f0" type="text" required></div><div class="field"><label for="f1">Register number</label><input id="f1" type="text" required></div><div class="field"><label for="f2">Course / class</label><input id="f2" type="text" ></div><div class="field"><label for="f3">Subject 1</label><input id="f3" type="text" value="English" ></div><div class="field"><label for="f4">Marks 1 (out of 100)</label><input id="f4" type="number" value="80" ></div><div class="field"><label for="f5">Subject 2</label><input id="f5" type="text" value="Mathematics" ></div><div class="field"><label for="f6">Marks 2 (out of 100)</label><input id="f6" type="number" value="75" ></div><div class="field"><label for="f7">Subject 3</label><input id="f7" type="text" value="Computer Science" ></div><div class="field"><label for="f8">Marks 3 (out of 100)</label><input id="f8" type="number" value="90" ></div><div class="field"><label for="f9">Subject 4</label><input id="f9" type="text" value="Statistics" ></div><div class="field"><label for="f10">Marks 4 (out of 100)</label><input id="f10" type="number" value="85" ></div><div class="field"><label for="f11">Subject 5</label><input id="f11" type="text" value="Environmental Studies" ></div><div class="field"><label for="f12">Marks 5 (out of 100)</label><input id="f12" type="number" value="88" ></div></div><div class="actions"><button class="primary" type="submit">Submit / Process</button><button class="secondary" type="reset">Clear form</button><button class="secondary" type="button" id="printBtn">Print</button></div></form><div id="msg" class="notice"></div></section>
+<section class="card result" id="output" aria-live="polite"></section>
+<footer>Educational prototype · Demo data only · Host on AWS S3 + CloudFront or GitHub Pages</footer></main><script>
+const form=document.getElementById('appForm'), output=document.getElementById('output'), msg=document.getElementById('msg');
+const labels=["Student name", "Register number", "Course / class", "Subject 1", "Marks 1 (out of 100)", "Subject 2", "Marks 2 (out of 100)", "Subject 3", "Marks 3 (out of 100)", "Subject 4", "Marks 4 (out of 100)", "Subject 5", "Marks 5 (out of 100)"], ids=["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"], kind='"marks"';
+form.addEventListener('submit',e=>{
+ e.preventDefault();
+ const data={}; ids.forEach((id,i)=>data[labels[i]]=document.getElementById(id).value);
+ let extra='';
+ const val=(i)=>document.getElementById(ids[i]).value;
+ if(kind==='marks'){
+   const scores=[]; for(let i=4;i<13;i+=2){let n=Number(val(i));if(n<0||n>100){msg.textContent='Marks must be between 0 and 100.';msg.style.display='block';return;}scores.push(n);}
+   const total=scores.reduce((a,b)=>a+b,0), pct=total/scores.length;
+   const grade=pct>=90?'A+':pct>=80?'A':pct>=70?'B':pct>=60?'C':pct>=50?'D':'F';
+   extra=`<div class="stats"><div><small>Total marks</small><b>${total}/${scores.length*100}</b></div><div><small>Average / Percentage</small><b>${pct.toFixed(2)}%</b></div><div><small>Grade / performance</small><b>${grade} · ${pct>=80?'Excellent':pct>=60?'Good':'Needs improvement'}</b></div></div><p class="muted">Rank: not calculated (requires other students' results).</p>`;
+ } else if(kind==='payroll'){
+   const nums=[5,6,7,8,9,10].map(i=>Number(val(i)||0)), [basic,hra,da,ta,other,ded]=nums;
+   const gross=basic+hra+da+ta+other, net=gross-ded;
+   extra=`<div class="stats"><div><small>Gross pay</small><b>₹${gross.toLocaleString('en-IN')}</b></div><div><small>Deductions</small><b>₹${ded.toLocaleString('en-IN')}</b></div><div><small>Net pay</small><b>₹${net.toLocaleString('en-IN')}</b></div></div>`;
+ } else if(kind==='attendance'){
+   let held=Number(val(5)), attended=Number(val(6)), status=val(4);
+   if(attended>held||held<1){msg.textContent='Check classes held and attended values.';msg.style.display='block';return;}
+   let total=held+1, done=attended+((status==='Present'||status==='OD')?1:0), pct=100*done/total;
+   extra=`<div class="stats"><div><small>Projected course attendance</small><b>${pct.toFixed(1)}%</b></div><div><small>Attendance status</small><b>${status}</b></div><div><small>Attendance requirement</small><b>${pct>=75?'75% met':'Below 75%'}</b></div></div>`;
+ } else if(kind==='property'){
+   const deal=val(0), min=Number(val(3)||0), max=Number(val(4)||0);
+   if(max<min){msg.textContent='Maximum budget must be at least the minimum budget.';msg.style.display='block';return;}
+   const rent=deal==='Rent', area=val(2);
+   const props=rent?[['2 BHK Apartment','Velachery',28000,'1050 sq. ft.'],['Office Space','OMR',65000,'1600 sq. ft.'],['Family House','Adyar',42000,'1400 sq. ft.']]:[['2 BHK Apartment','Velachery',7800000,'1050 sq. ft.'],['Office Space','OMR',12500000,'1600 sq. ft.'],['Independent House','Adyar',14500000,'1800 sq. ft.']];
+   const matches=props.filter(p=>(area==='Any area'||p[1]===area)&&p[2]>=min&&p[2]<=max);
+   extra=`<h3>Sample matching properties</h3>${matches.length?'<div class="table-wrap"><table><tr><th>Property</th><th>Area</th><th>Size</th><th>Value</th></tr>'+matches.map(p=>`<tr><td>${p[0]}</td><td>${p[1]}, Chennai</td><td>${p[3]}</td><td>₹${p[2].toLocaleString('en-IN')}${rent?'/month':''}</td></tr>`).join('')+'</table></div>':'No sample properties match; adjust locality or budget.'}<p class="muted">Sample listing only. Enquiries are not sent to real agents.</p>`;
+ } else if(kind==='cab'){
+   const type=val(0), pkg=val(4), duration=val(5), mult={'Mini':350,'Sedan':500,'SUV':800,'Premium':1200}[pkg]||500;
+   const hrs=parseInt(duration)||4, fare=Math.round(mult*Math.max(1,hrs/4)*(type==='Out station'?2:type==='Rental'?1.25:1)*(val(8)==='Yes'?1.7:1));
+   extra=`<div class="stats"><div><small>Package</small><b>${pkg}</b></div><div><small>Duration</small><b>${duration}</b></div><div><small>Estimated sample fare</small><b>₹${fare.toLocaleString('en-IN')}</b></div></div><p class="muted">Sample estimate only; no cab or driver is booked.</p>`;
+ } else if(kind==='library'){
+   const status=val(7)||'Available';
+   extra=`<div class="stats"><div><small>Copies</small><b>${val(5)||'Not entered'}</b></div><div><small>Rack number</small><b>${val(6)||'Not entered'}</b></div><div><small>Current status</small><b>${status}</b></div></div><button class="secondary" id="toggleStatus" type="button">Toggle Taken / Returned</button>`;
+ } else if(kind==='student'){
+   extra=`<div class="stats"><div><small>Attendance report</small><b>${val(8)||0}%</b></div><div><small>Progress report</small><b>${val(9)||0}%</b></div><div><small>Semester grade</small><b>${val(7)||'Not entered'}</b></div></div><h3>Sample semester marksheet</h3><div class="table-wrap"><table><tr><th>Subject</th><th>Marks</th><th>Grade</th></tr><tr><td>Programming</td><td>82</td><td>A</td></tr><tr><td>Mathematics</td><td>76</td><td>B</td></tr><tr><td>Communication Skills</td><td>88</td><td>A</td></tr><tr><td>Cloud Fundamentals</td><td>91</td><td>A+</td></tr></table></div><p class="muted">Semester marks are placeholders and should be replaced with verified results.</p>`;
+ } else if(kind==='hospital'){
+   extra=`<p class="muted">Demo patient reference: SIM-${Math.floor(100000+Math.random()*899999)}. No official medical record has been created. Use fictional data only.</p>`;
+ } else if(kind==='counselling'){
+   extra=`<p class="muted">Demo counselling reference: COUN-${Math.floor(10000+Math.random()*89999)}. No appointment has been scheduled.</p>`;
+ }
+ const rows=Object.entries(data).filter(([k,v])=>v!=='').map(([k,v])=>`<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+ output.innerHTML=`<h2>Submitted details</h2>${extra}<div class="table-wrap"><table>${rows}</table></div>`;
+ output.style.display='block';msg.style.display='none';output.scrollIntoView({behavior:'smooth',block:'start'});
+ const toggle=document.getElementById('toggleStatus');
+ if(toggle)toggle.onclick=()=>{let s=document.getElementById(ids[7]);s.value=s.value==='Taken'?'Returned':'Taken';toggle.textContent='Status changed to '+s.value+' (submit again to update report)';};
+});
+form.addEventListener('reset',()=>{output.style.display='none';msg.style.display='none';});
+document.getElementById('printBtn').onclick=()=>window.print();
+</script></body></html>
